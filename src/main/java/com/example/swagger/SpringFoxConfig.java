@@ -15,11 +15,11 @@ import static com.google.common.base.Predicates.or;
 
 @Configuration
 @EnableSwagger2
-public class SpringFoxConfig {                                    
+public class SpringFoxConfig {
 	@Bean
 	public Docket postsApi() {
-		return new Docket(DocumentationType.SWAGGER_2).groupName("public-api")
-				.apiInfo(apiInfo()).select().paths(postPaths()).build();
+		return new Docket(DocumentationType.SWAGGER_2).groupName("public-api").apiInfo(apiInfo()).select()
+				.paths(postPaths()).build();
 	}
 
 	private Predicate<String> postPaths() {
@@ -27,7 +27,7 @@ public class SpringFoxConfig {
 	}
 
 	private ApiInfo apiInfo() {
-		return new ApiInfoBuilder().title("Payroll API")
-				.description("Payroll API reference for developers").version("1.0").build();
+		return new ApiInfoBuilder().title("Payroll API").description("Payroll API reference for developers")
+				.version("1.0").build();
 	}
 }

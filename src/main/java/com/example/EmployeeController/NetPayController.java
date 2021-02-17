@@ -24,112 +24,45 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.model.Employee;
+import com.example.model.PayRecords;
 import com.example.model.SocialContribution;
 import com.example.model.TaxRange;
 import com.example.repository.EmployeeRepository;
 import com.example.repository.SocialContributionRepository;
 import com.example.repository.TaxRangeRepository;
+import com.example.service.NetPayService;
 
 @RestController
 public class NetPayController {
+
+	
+	@Autowired
+	private final NetPayService netPayService;
+
 	
 
-	@Autowired
-	private final SocialContributionRepository socialRepository;
-	
-	@Autowired
-	private final EmployeeRepository employeeRepository;
-	
-	@Autowired
-	private final TaxRangeRepository taxRepository;
-	
-	private List<TaxRange> taxRanges = new ArrayList<TaxRange>();
-	
-	public NetPayController(EmployeeRepository employeeRepository, SocialContributionRepository socialRepository, TaxRangeRepository taxRepository) {
-		this.employeeRepository = employeeRepository;
-		this.socialRepository = socialRepository;
-		this.taxRepository = taxRepository;
+	public NetPayController(NetPayService netPayService) {
+		
+		this.netPayService = netPayService;
 	}
-	
+
 	@PostMapping("/api/payroll/netpays")
-	ResponseEntity<Double> all(@RequestBody ArrayList<String> ids, @RequestParam int start, @RequestParam int end)  {
-	    
-		if(ids.size() == 0 || start == 0 || end == 0 || end < start)
-		{
-			return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-		}
-		Double netPay = 0.0;
-		
+	ResponseEntity<List<PayRecords>> all(@RequestBody ArrayList<String> ids, @RequestParam int start, @RequestParam int end) {
+		List<PayRecords> payRecordList = new ArrayList<>();
 		try {
-			Iterable<Employee> employees =   employeeRepository.findAllById(ids);		
-			List<Employee> filteredEmployees  = ((Collection<Employee>) employees).stream()
-											.filter(x->x.getJoiningDate()>=start && (x.getLeavingDate() == 0  || x.getLeavingDate()<= end))
-											.collect(Collectors.toList());
 			
-			Collection<SocialContribution> socialContributions = socialRepository.findAll().stream()
-					.filter(x->x.getPeriod()>=start && x.getPeriod()<= end)
-					.collect(Collectors.toList());
+			payRecordList = netPayService.generateNetPay(ids, start, end);
 			
-			
-			SimpleDateFormat originalFormat = new SimpleDateFormat("yyyyMM",Locale.ENGLISH);
-			Date startDate = originalFormat.parse(String.valueOf(start+1));
-			Date endDate = originalFormat.parse(String.valueOf(end+1));
-			
-			Calendar startCalender = Calendar.getInstance();
-			startCalender.setTime(startDate);
-			Calendar endCalender = Calendar.getInstance();
-			endCalender.setTime(endDate);
-			
-					
-			List<Integer> ds = new ArrayList<>();
-			
-			
-			
-			taxRanges = taxRepository.findAll();
-			
-			for (Date date = startCalender.getTime(); startCalender.before(endCalender) || startCalender.equals(endCalender); startCalender.add(Calendar.MONTH, 1), date = startCalender.getTime()) {
-			 	int month = Integer.parseInt(originalFormat.format(date))-1;
-				ds.add(Integer.parseInt(originalFormat.format(date))-1);
-			 	List<Double> socialPercentages = socialContributions.stream().filter(x-> x.getPeriod() == month).map(s->s.getPercentage()).collect(Collectors.toList());
-			 	Double  socialPercentage = 0.0;
-			 	
-			 	if(socialPercentages.size() > 0)
-			 	{
-			 		socialPercentage = socialPercentages.get(0);
-			 	}
-			 	
-			 	List<Employee> presentEmployee = filteredEmployees.stream().filter(x->x.getJoiningDate()<= month &&  (x.getLeavingDate() == 0 || month<=x.getLeavingDate())).collect(Collectors.toList());
-			 	
-			 	for(Employee employee : presentEmployee)
-			 	{
-			 		netPay += calculateNetSalary(employee,socialPercentage);
-			 	}
-			 	
-			}
-		}catch(Exception ex) {
+		} catch (Exception ex) {
 			return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
 		}
-				
 
-		return ResponseEntity.ok(netPay);
-	    
-	  }
-	
-	private Double calculateNetSalary(Employee employee, Double socialPercentage) {		
-		Double tax = 0.0;
-		List<Double> trs = taxRanges.stream().filter(x->x.getLowerSemiNetTax() <= employee.getGrossSalary() && employee.getGrossSalary()<=x.getUpperSemiNetTax())
-		.map(x->x.getSalaryTaxAmount()).collect(Collectors.toList());
-		
-		if(trs.size() > 0 )
-		{
-			tax = trs.get(0);
-		}
-		Double gross = employee.getGrossSalary();
-		Double percentage = (gross * socialPercentage/100);
-		Double semiNet = gross  - percentage;
-		Double netPay = semiNet - tax;
-		return netPay;
+		return ResponseEntity.ok(payRecordList);
+
 	}
+	
+	// list of employee
 
+	
 
 }

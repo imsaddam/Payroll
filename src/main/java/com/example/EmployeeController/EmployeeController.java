@@ -21,76 +21,63 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.model.Employee;
 import com.example.repository.EmployeeRepository;
+import com.example.service.EmployeeService;
 
 @RestController
 class EmployeeController {
 
-  @Autowired
-  private final EmployeeRepository repository;
+	@Autowired
+	private final EmployeeService employeeService;
 
-  EmployeeController(EmployeeRepository repository) {
-    this.repository = repository;
-  }
+	EmployeeController(EmployeeService employeeService) {
+		this.employeeService = employeeService;
+	}
 
+	@GetMapping("/api/payroll/employees")
+	List<Employee> all() {
 
+		return employeeService.getAll();
+	}
 
-  @GetMapping("/api/payroll/employees")
-  List<Employee> all() {
-	
-   return repository.findAll();
-  }
-  
-  @GetMapping("/api/payroll/employeesByRange")
-  ResponseEntity<List<Employee>> employeesByRange(@RequestParam int start, @RequestParam int end)  {
-	    
-	  if(start == 0 || end == 0 || end < start)
-		{
+	@GetMapping("/api/payroll/employeesByRange")
+	ResponseEntity<List<Employee>> employeesByRange(@RequestParam int start, @RequestParam int end) {
+
+		
+		List<Employee> filteredEmployees = new ArrayList<>();
+		try {
+			
+		 filteredEmployees = employeeService.employeesByRange(start, end);
+			
+		}catch(Exception ex) {
+			
 			return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
 		}
-	  
-		Iterable<Employee> employees =   repository.findAll();		
-		List<Employee> filteredEmployees  = ((Collection<Employee>) employees).stream()
-										.filter(x->x.getJoiningDate()>=start && (x.getLeavingDate() == 0  || x.getLeavingDate()>= end))
-										.collect(Collectors.toList());
-		
+
 		return ResponseEntity.ok(filteredEmployees);
-  }
-  // end::get-aggregate-root[]
+	}
+	// end::get-aggregate-root[]
 
-  @PostMapping("/api/payroll/employees")
-  Employee newEmployee(@RequestBody Employee newEmployee) {
-	newEmployee.setId(UUID.randomUUID().toString());
-    return repository.save(newEmployee);
-  }
+	@PostMapping("/api/payroll/employees")
+	Employee newEmployee(@RequestBody Employee newEmployee) {
+		return employeeService.createEmployee(newEmployee);
+	}
 
-  // Single item
-  
-  @GetMapping("/api/payroll/employees/{id}")
-  Employee one(@PathVariable String id) throws Throwable {
-    
-    return repository.findById(id)
-      .orElseThrow(() -> new Exception());
-  }
+	// Single item
 
-  @PutMapping("/api/payroll/employees/{id}")
-  Employee replaceEmployee(@RequestBody Employee newEmployee, @PathVariable String id) {
-    
-    return repository.findById(id)
-      .map(employee -> {
-        employee.setName(newEmployee.getName());
-        employee.setRole(newEmployee.getRole());
-        employee.setGrossSalary(newEmployee.getGrossSalary());
-        employee.setLeavingDate(newEmployee.getLeavingDate());
-        return repository.save(employee);
-      })
-      .orElseGet(() -> {
-        newEmployee.setId(id);
-        return repository.save(newEmployee);
-      });
-  }
+	@GetMapping("/api/payroll/employees/{id}")
+	Employee one(@PathVariable String id) throws Throwable {
 
-  @DeleteMapping("/api/payroll/employees/{id}")
-  void deleteEmployee(@PathVariable String id) {
-    repository.deleteById(id);
-  }
+		return employeeService.getByID(id).orElseThrow(() -> new Exception());
+	}
+
+	@PutMapping("/api/payroll/employees/{id}")
+	Employee replaceEmployee(@RequestBody Employee newEmployee, @PathVariable String id) {
+
+		return employeeService.updateEmployee(newEmployee, id);
+	}
+
+	@DeleteMapping("/api/payroll/employees/{id}")
+	void deleteEmployee(@PathVariable String id) {
+		employeeService.deleteById(id);
+	}
 }

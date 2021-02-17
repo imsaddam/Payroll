@@ -23,55 +23,50 @@ import com.example.repository.TaxRangeRepository;
 @RestController
 class TaxRangeController {
 
-  @Autowired
-  private final TaxRangeRepository repository;
+	@Autowired
+	private final TaxRangeRepository repository;
 
-  TaxRangeController(TaxRangeRepository repository) {
-    this.repository = repository;
-  }
+	TaxRangeController(TaxRangeRepository repository) {
+		this.repository = repository;
+	}
 
+	@GetMapping("/api/payroll/taxRange")
+	List<TaxRange> all() {
 
+		return repository.findAll();
+	}
+	// end::get-aggregate-root[]
 
-  @GetMapping("/api/payroll/taxRange")
-  List<TaxRange> all() {
-	
-   return repository.findAll();
-  }
-  // end::get-aggregate-root[]
+	@PostMapping("/api/payroll/taxRange")
+	TaxRange newTaxRange(@RequestBody TaxRange taxRange) {
+		taxRange.setId(UUID.randomUUID().toString());
+		return repository.save(taxRange);
+	}
 
-  @PostMapping("/api/payroll/taxRange")
-  TaxRange newTaxRange(@RequestBody TaxRange taxRange) {
-	  taxRange.setId(UUID.randomUUID().toString());
-    return repository.save(taxRange);
-  }
+	// Single item
 
-  // Single item
-  
-  @GetMapping("/api/payroll/taxRange/{id}")
-  TaxRange one(@PathVariable String id) throws Throwable {
-    
-    return repository.findById(id)
-      .orElseThrow(() -> new Exception());
-  }
+	@GetMapping("/api/payroll/taxRange/{id}")
+	TaxRange one(@PathVariable String id) throws Throwable {
 
-  @PutMapping("/api/payroll/taxRange/{id}")
-  TaxRange replaceTaxRange(@RequestBody TaxRange taxRange, @PathVariable String id) {
-    
-    return repository.findById(id)
-      .map(tr -> {
-    	  tr.setLowerSemiNetTax(taxRange.getLowerSemiNetTax());
-    	  tr.setUpperSemiNetTax(taxRange.getUpperSemiNetTax());
-    	  tr.setSalaryTaxAmount(taxRange.getSalaryTaxAmount());
-        return repository.save(tr);
-      })
-      .orElseGet(() -> {
-    	  taxRange.setId(id);
-        return repository.save(taxRange);
-      });
-  }
+		return repository.findById(id).orElseThrow(() -> new Exception());
+	}
 
-  @DeleteMapping("/api/payroll/taxRange/{id}")
-  void deleteTaxRange(@PathVariable String id) {
-    repository.deleteById(id);
-  }
+	@PutMapping("/api/payroll/taxRange/{id}")
+	TaxRange replaceTaxRange(@RequestBody TaxRange taxRange, @PathVariable String id) {
+
+		return repository.findById(id).map(tr -> {
+			tr.setLowerSemiNetTax(taxRange.getLowerSemiNetTax());
+			tr.setUpperSemiNetTax(taxRange.getUpperSemiNetTax());
+			tr.setSalaryTaxAmount(taxRange.getSalaryTaxAmount());
+			return repository.save(tr);
+		}).orElseGet(() -> {
+			taxRange.setId(id);
+			return repository.save(taxRange);
+		});
+	}
+
+	@DeleteMapping("/api/payroll/taxRange/{id}")
+	void deleteTaxRange(@PathVariable String id) {
+		repository.deleteById(id);
+	}
 }

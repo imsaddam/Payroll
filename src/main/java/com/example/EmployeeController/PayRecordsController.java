@@ -25,54 +25,49 @@ import com.example.repository.TaxRangeRepository;
 @RestController
 class PayRecordsController {
 
-  @Autowired
-  private final PayRecordsRepository repository;
+	@Autowired
+	private final PayRecordsRepository repository;
 
-  PayRecordsController(PayRecordsRepository repository) {
-    this.repository = repository;
-  }
+	PayRecordsController(PayRecordsRepository repository) {
+		this.repository = repository;
+	}
 
+	@GetMapping("/api/payroll/payRecords")
+	List<PayRecords> all() {
 
+		return repository.findAll();
+	}
+	// end::get-aggregate-root[]
 
-  @GetMapping("/api/payroll/payRecords")
-  List<PayRecords> all() {
-	
-   return repository.findAll();
-  }
-  // end::get-aggregate-root[]
+	@PostMapping("/api/payroll/payRecords")
+	PayRecords newPayRecords(@RequestBody PayRecords payRecords) {
+		payRecords.setId(UUID.randomUUID().toString());
+		return repository.save(payRecords);
+	}
 
-  @PostMapping("/api/payroll/payRecords")
-  PayRecords newPayRecords(@RequestBody PayRecords payRecords) {
-	  payRecords.setId(UUID.randomUUID().toString());
-    return repository.save(payRecords);
-  }
+	// Single item
 
-  // Single item
-  
-  @GetMapping("/api/payroll/payRecords/{id}")
-  PayRecords one(@PathVariable String id) throws Throwable {
-    
-    return repository.findById(id)
-      .orElseThrow(() -> new Exception());
-  }
+	@GetMapping("/api/payroll/payRecords/{id}")
+	PayRecords one(@PathVariable String id) throws Throwable {
 
-  @PutMapping("/api/payroll/payRecords/{id}")
-  PayRecords replacePayRecords(@RequestBody PayRecords payRecords, @PathVariable String id) {
-    
-    return repository.findById(id)
-      .map(pr -> {
-    	  pr.setNetPay(payRecords.getNetPay());
-    	  pr.setPeriod(payRecords.getPeriod());
-        return repository.save(pr);
-      })
-      .orElseGet(() -> {
-    	  payRecords.setId(id);
-        return repository.save(payRecords);
-      });
-  }
+		return repository.findById(id).orElseThrow(() -> new Exception());
+	}
 
-  @DeleteMapping("/api/payroll/payRecords/{id}")
-  void deletePayRecords(@PathVariable String id) {
-    repository.deleteById(id);
-  }
+	@PutMapping("/api/payroll/payRecords/{id}")
+	PayRecords replacePayRecords(@RequestBody PayRecords payRecords, @PathVariable String id) {
+
+		return repository.findById(id).map(pr -> {
+			pr.setNetPay(payRecords.getNetPay());
+			pr.setPeriod(payRecords.getPeriod());
+			return repository.save(pr);
+		}).orElseGet(() -> {
+			payRecords.setId(id);
+			return repository.save(payRecords);
+		});
+	}
+
+	@DeleteMapping("/api/payroll/payRecords/{id}")
+	void deletePayRecords(@PathVariable String id) {
+		repository.deleteById(id);
+	}
 }

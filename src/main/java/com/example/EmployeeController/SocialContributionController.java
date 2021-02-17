@@ -21,54 +21,50 @@ import com.example.repository.SocialContributionRepository;
 @RestController
 class SocialContributionController {
 
-  @Autowired
-  private final SocialContributionRepository repository;
+	@Autowired
+	private final SocialContributionRepository repository;
 
-  SocialContributionController(SocialContributionRepository repository) {
-    this.repository = repository;
-  }
+	SocialContributionController(SocialContributionRepository repository) {
+		this.repository = repository;
+	}
 
+	@GetMapping("/api/payroll/socialcontribution")
+	List<SocialContribution> all() {
 
+		return repository.findAll();
+	}
+	// end::get-aggregate-root[]
 
-  @GetMapping("/api/payroll/socialcontribution")
-  List<SocialContribution> all() {
-	
-   return repository.findAll();
-  }
-  // end::get-aggregate-root[]
+	@PostMapping("/api/payroll/SocialContribution")
+	SocialContribution newSocialContribution(@RequestBody SocialContribution socialContribution) {
+		socialContribution.setId(UUID.randomUUID().toString());
+		return repository.save(socialContribution);
+	}
 
-  @PostMapping("/api/payroll/SocialContribution")
-  SocialContribution newSocialContribution(@RequestBody SocialContribution socialContribution) {
-	socialContribution.setId(UUID.randomUUID().toString());
-    return repository.save(socialContribution);
-  }
+	// Single item
 
-  // Single item
-  
-  @GetMapping("/api/payroll/socialcontribution/{id}")
-  SocialContribution one(@PathVariable String id) throws Throwable {
-    
-    return repository.findById(id)
-      .orElseThrow(() -> new Exception());
-  }
+	@GetMapping("/api/payroll/socialcontribution/{id}")
+	SocialContribution one(@PathVariable String id) throws Throwable {
 
-  @PutMapping("/api/payroll/socialcontribution/{id}")
-  SocialContribution replaceSocialContribution(@RequestBody SocialContribution socialContribution, @PathVariable String id) {
-    
-    return repository.findById(id)
-      .map(sct -> {
-    	  sct.setPercentage(socialContribution.getPercentage());
-    	  sct.setPeriod(socialContribution.getPeriod());
-        return repository.save(sct);
-      })
-      .orElseGet(() -> {
-    	  socialContribution.setId(id);
-        return repository.save(socialContribution);
-      });
-  }
+		return repository.findById(id).orElseThrow(() -> new Exception());
+	}
 
-  @DeleteMapping("/api/payroll/socialcontribution/{id}")
-  void deleteSocialContribution(@PathVariable String id) {
-    repository.deleteById(id);
-  }
+	@PutMapping("/api/payroll/socialcontribution/{id}")
+	SocialContribution replaceSocialContribution(@RequestBody SocialContribution socialContribution,
+			@PathVariable String id) {
+
+		return repository.findById(id).map(sct -> {
+			sct.setPercentage(socialContribution.getPercentage());
+			sct.setPeriod(socialContribution.getPeriod());
+			return repository.save(sct);
+		}).orElseGet(() -> {
+			socialContribution.setId(id);
+			return repository.save(socialContribution);
+		});
+	}
+
+	@DeleteMapping("/api/payroll/socialcontribution/{id}")
+	void deleteSocialContribution(@PathVariable String id) {
+		repository.deleteById(id);
+	}
 }
